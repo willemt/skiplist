@@ -23,11 +23,19 @@ static void __ensurecapacity(
 /**
  * Allocate memory for nodes. Used for chained nodes. */
 static node_t *__allocnodes(
+    skiplist_t * me,
     unsigned int count
 )
 {
     // FIXME: make a chain node reservoir
     return calloc(count, sizeof(node_t));
+}
+
+node_t* __allocnode(int levels)
+{
+    node_t* n = calloc(1, sizeof(node_t));
+    n->right = calloc(1, sizeof(node_t*) * levels);
+    return n;
 }
 
 skiplist_t *skiplist_new(func_longcmp_f cmp)
@@ -36,19 +44,14 @@ skiplist_t *skiplist_new(func_longcmp_f cmp)
 
     me = calloc(1, sizeof(skiplist_t));
     me->cmp = cmp;
+    me->levels = 1;
+    me->nil = __allocnode(me, me->levels);
     return me;
 }
 
 int skiplist_count(const skiplist_t * me)
 {
     return me->count;
-}
-
-int skiplist_size(
-    skiplist_t * me
-)
-{
-    return me->arraySize;
 }
 
 /**
@@ -64,7 +67,7 @@ static void __node_empty(
     }
     else
     {
-        __node_empty(me, node->next);
+//        __node_empty(me, node->next);
         free(node);
         me->count--;
     }
@@ -99,38 +102,73 @@ void *skiplist_get(skiplist_t * me, const void *key)
     if (0 == skiplist_count(me) || !key)
         return NULL;
 
-    int lvl = 0;
-
+    int lvl = me->levels - 1;
     node_t *n = me->nil;
 
-    while (lvl < me->levels)
+    while (0 <= lvl)
     {
-        if (!n->right)
-        {
-            lvl += 1;
-            continue;
-        }
+        if (!n)
+            return NULL;
 
         node_t* r = n->right[lvl];
-
         long c = me->cmp(key, r->ety.k, NULL);
 
-        /* move down to the next level */
         if (c < 0)
         {
-            lvl += 1;
+            lvl -= 1;
         }
-        /* place after */
-        else if (c > 0)
+        else if (0 < c)
         {
-
+            n = r;
         }
-        /* is equal */
         else
         {
             return r->ety.v;
         }
     }
+    return NULL;
+}
+
+void *skiplist_put(
+    skiplist_t * me,
+    void *key,
+    void *val_new
+)
+{
+    if (!key)
+        return NULL;
+
+    int lvl = me->levels - 1;
+    node_t *n = me->nil;
+
+    while (0 <= lvl)
+    {
+        if (!n->right)
+        {
+            break;
+        }
+
+        node_t* r = n->right[lvl];
+        long c = me->cmp(key, r->ety.k, NULL);
+
+        if (c < 0)
+        {
+            lvl -= 1;
+        }
+        else if (0 < c)
+        {
+            int i;
+            for (i=0; rand() % 2; i++);
+
+            n->right[lvl] = __allocnode(me, i);
+            n->right[lvl]->right[lvl] = r;
+        }
+        else
+        {
+            return r->ety.v;
+        }
+    }
+
     return NULL;
 }
 
@@ -142,42 +180,14 @@ int skiplist_contains_key(
     return (NULL != skiplist_get(me, key));
 }
 
-void skiplist_remove_entry(
-    skiplist_t * me,
-    entry_t * e,
-    const void *key
-)
-{
-
-}
-
 void *skiplist_remove(
     skiplist_t * me,
     const void *key
 )
 {
-    entry_t e;
+    skiplist_entry_t e;
 
-    skiplist_remove_entry(me, &e, key);
     return (void *) e.v;
 }
-
-void *skiplist_put(
-    skiplist_t * me,
-    void *key,
-    void *val_new
-)
-{
-
-}
-
-void skiplist_put_entry(
-    skiplist_t * me,
-    entry_t * e
-)
-{
-    skiplist_put(me, e->k, e->v);
-}
-
 
 /*--------------------------------------------------------------79-characters-*/

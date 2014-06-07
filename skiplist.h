@@ -8,13 +8,13 @@ typedef long (*func_longcmp_f) (
 
 typedef struct {
     void *k, *v;
-} entry_t;
+} skiplist_entry_t;
 
 typedef struct node_s node_t;
 
 struct node_s
 {
-    entry_t ety;
+    skiplist_entry_t ety;
 
     /* array of pointers as this node could be on a higher express line level.
      * The current node's line level is determined by remembering the line
@@ -27,30 +27,38 @@ struct node_s
 typedef struct {
     func_longcmp_f cmp;
 
-    void* udata;
+    const void* udata;
 
+    /* population within data structure */
     int count;
 
-    /* number of levels */
+    /* number of lines */
     int levels;
 
     node_t* nil;
+
     node_t* head;
 } skiplist_t;
 
-skiplist_t *skiplist_new(func_longcmp_f cmp);
+/**
+ * @param udata User data passed to comparator */
+skiplist_t *skiplist_new(func_longcmp_f cmp, const void* udata);
 
 void *skiplist_get(skiplist_t * me, const void *key);
 
-int skiplist_contains_key(skiplist_t * me, const void *key);
+/**
+ * @return smallest item */
+void *skiplist_get_min(skiplist_t * me);
 
-void skiplist_remove_entry(skiplist_t * me, entry_t * e, const void *key);
+/**
+ * @return largest item */
+void *skiplist_get_max(skiplist_t * me);
+
+int skiplist_contains_key(skiplist_t * me, const void *key);
 
 void *skiplist_remove(skiplist_t * me, const void *key);
 
 void *skiplist_put(skiplist_t * me, void *key, void *val);
-
-void skiplist_put_entry(skiplist_t * me, entry_t * e);
 
 /**
  * @return number of items */
