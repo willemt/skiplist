@@ -31,18 +31,33 @@ static node_t *__allocnodes(
     return calloc(count, sizeof(node_t));
 }
 
-node_t* __allocnode(int levels)
+node_t* __allocnode(skiplist_t* me, unsigned int levels)
 {
     node_t* n = calloc(1, sizeof(node_t));
     n->right = calloc(1, sizeof(node_t*) * levels);
+
+    /* make sure nil and head are included in the new line(s) */
+    if (me->levels < levels)
+    {
+        me->nil->right = realloc(me->nil->right, sizeof(node_t*) * levels);
+
+        int i;
+        for (i=levels-1; me->levels < i ; i--)
+        {
+            me->nil->right[i] = n;
+        }
+
+        me->levels = levels;
+    }
     return n;
 }
 
-skiplist_t *skiplist_new(func_longcmp_f cmp)
+skiplist_t *skiplist_new(func_longcmp_f cmp, const void* userdata)
 {
     skiplist_t *me;
 
     me = calloc(1, sizeof(skiplist_t));
+    me->udata = userdata;
     me->cmp = cmp;
     me->levels = 1;
     me->nil = __allocnode(me, me->levels);
@@ -105,12 +120,9 @@ void *skiplist_get(skiplist_t * me, const void *key)
     int lvl = me->levels - 1;
     node_t *n = me->nil;
 
-    while (0 <= lvl)
+    while (0 <= lvl && n != me->head)
     {
-        if (!n)
-            return NULL;
-
-        node_t* r = n->right[lvl];
+        node_t *r = n->right[lvl] ? n->right[lvl] : me->head;
         long c = me->cmp(key, r->ety.k, NULL);
 
         if (c < 0)
@@ -140,15 +152,12 @@ void *skiplist_put(
 
     int lvl = me->levels - 1;
     node_t *n = me->nil;
+    node_t* r;
 
-    while (0 <= lvl)
+
+    while (0 <= lvl && n != me->head)
     {
-        if (!n->right)
-        {
-            break;
-        }
-
-        node_t* r = n->right[lvl];
+        r = n->right[lvl] ? n->right[lvl] : me->head;
         long c = me->cmp(key, r->ety.k, NULL);
 
         if (c < 0)
@@ -157,17 +166,20 @@ void *skiplist_put(
         }
         else if (0 < c)
         {
-            int i;
-            for (i=0; rand() % 2; i++);
 
-            n->right[lvl] = __allocnode(me, i);
-            n->right[lvl]->right[lvl] = r;
         }
         else
         {
             return r->ety.v;
         }
     }
+
+    /* flip a coin until we get tails */
+    unsigned int depth;
+    for (depth=0; rand() % 2; depth++);
+
+    n->right[lvl] = __allocnode(me, depth);
+    n->right[lvl]->right[lvl] = r;
 
     return NULL;
 }

@@ -30,10 +30,10 @@ typedef struct {
     const void* udata;
 
     /* population within data structure */
-    int count;
+    unsigned int count;
 
     /* number of lines */
-    int levels;
+    unsigned int levels;
 
     node_t* nil;
 
@@ -44,6 +44,9 @@ typedef struct {
  * @param udata User data passed to comparator */
 skiplist_t *skiplist_new(func_longcmp_f cmp, const void* udata);
 
+/**
+ * Get this key's value.
+ * @return key's item, otherwise NULL */
 void *skiplist_get(skiplist_t * me, const void *key);
 
 /**
@@ -54,10 +57,20 @@ void *skiplist_get_min(skiplist_t * me);
  * @return largest item */
 void *skiplist_get_max(skiplist_t * me);
 
+/**
+ * Is this key inside this map?
+ * @return 1 if key is in hash, otherwise 0 */
 int skiplist_contains_key(skiplist_t * me, const void *key);
 
+/**
+ * Remove this key and value from the map.
+ * @return value of key, or NULL on failure */
 void *skiplist_remove(skiplist_t * me, const void *key);
 
+/**
+ * Associate key with val.
+ * Does not insert key if an equal key exists.
+ * @return previous associated val; otherwise NULL */
 void *skiplist_put(skiplist_t * me, void *key, void *val);
 
 /**
