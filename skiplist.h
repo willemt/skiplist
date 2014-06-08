@@ -74,6 +74,21 @@ void *skiplist_remove(skiplist_t * me, const void *key);
 void *skiplist_put(skiplist_t * me, void *key, void *val);
 
 /**
+ * Remove the value refrenced by this key. */
+void skiplist_remove_entry(
+    skiplist_t * hmap,
+    skiplist_entry_t * entry,
+    const void *key
+);
+
+/**
+ * Put this key/value entry */
+void skiplist_put_entry(
+    skiplist_t * hmap,
+    skiplist_entry_t * entry
+);
+
+/**
  * @return number of items */
 int skiplist_count(const skiplist_t * me);
 
