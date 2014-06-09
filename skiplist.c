@@ -141,6 +141,67 @@ void *skiplist_get(skiplist_t * me, const void *key)
     return NULL;
 }
 
+static unsigned int __flip_coins()
+{
+    int depth;
+    for (depth=0; rand() % 2; depth++);
+    return depth;
+}
+
+static void *__put(
+    skiplist_t * me,
+    void *key,
+    void *val_new,
+    unsigned int lvl,
+    node_t *prev,
+    void *key_prev,
+    unsigned int *put_depth
+)
+{
+    node_t *n = prev;
+
+    while (1)
+    {
+        node_t *r = n->right[lvl];
+
+        long c = me->cmp(key, r->ety.k, NULL);
+
+        /* move right */
+        if (0 < c)
+        {
+            n = r;
+        }
+        /* straight swap */
+        else if (c == 0)
+        {
+            void* old_v = r->ety.v;
+            r->ety.v = val_new;
+            return NULL;
+        }
+        /* move down a lane */
+        else
+        {
+            if (lvl == 0)
+            {
+                *put_depth = __flip_coins();
+                n->right[lvl] = __allocnode(me, *put_depth);
+                return n;
+            }
+
+            node_t* inserted =  __put(me, key, val_new, lvl-1, r, r->ety.k, put_depth);
+
+            /* while the stack is rolling back up, we can make sure the
+             * previous nodes point to the new node correctly */
+            if (inserted && lvl <= *put_depth)
+            {
+                n->right[lvl] = inserted;
+            }
+            
+            return inserted;
+        }
+    }
+}
+
 void *skiplist_put(
     skiplist_t * me,
     void *key,
@@ -150,38 +211,12 @@ void *skiplist_put(
     if (!key)
         return NULL;
 
-    int lvl = me->levels - 1;
+    unsigned int lvl = me->levels - 1;
+    unsigned int put_depth;
+
     node_t *n = me->nil;
-    node_t* r;
 
-
-    while (0 <= lvl && n != me->head)
-    {
-        r = n->right[lvl] ? n->right[lvl] : me->head;
-        long c = me->cmp(key, r->ety.k, NULL);
-
-        if (c < 0)
-        {
-            lvl -= 1;
-        }
-        else if (0 < c)
-        {
-
-        }
-        else
-        {
-            return r->ety.v;
-        }
-    }
-
-    /* flip a coin until we get tails */
-    unsigned int depth;
-    for (depth=0; rand() % 2; depth++);
-
-    n->right[lvl] = __allocnode(me, depth);
-    n->right[lvl]->right[lvl] = r;
-
-    return NULL;
+    return __put(me, key, val_new, lvl, n, n->ety.k, &put_depth);
 }
 
 int skiplist_contains_key(

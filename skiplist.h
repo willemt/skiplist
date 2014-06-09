@@ -19,7 +19,10 @@ struct node_s
     /* array of pointers as this node could be on a higher express line level.
      * The current node's line level is determined by remembering the line
      * level of the node which points to this node. That's why we don't record
-     * the line level in this struct */
+     * the line level in this struct.
+     *
+     * We don't record a "left" node because the put() operation backtracks
+     * using the * stack via a recursive call */
     node_t **right;
 };
 
