@@ -83,7 +83,7 @@ void skiplist_clear(
     skiplist_t * me
 )
 {
-
+    // TODO
 }
 
 void skiplist_free(
@@ -161,22 +161,24 @@ static void *__put(
         r = n->right[lvl];
         long c = me->cmp(key, r->ety.k, NULL);
 
-        /* move onwards */
+        /* we are bigger, move onwards */
         if (0 < c)
         {
             n = r;
         }
-        /* move down a lane */
-        if (c < 0)
+        /* straight swap */
+        else if (c == 0)
         {
-
-insert:
+            void* old_v = r->ety.v;
+            r->ety.v = val_new;
+            return NULL;
+        }
+        /* move down a lane */
+        else
+        {
+            /* if we're on the bottom lane, we've found our spot */
             if (lvl == 0)
-            {
-                *put_depth = __flip_coins();
-                n->right[lvl] = __allocnode(me, *put_depth);
-                return n;
-            }
+                goto insert;
 
             node_t* inserted =  __put(me, key, val_new, lvl-1, r, put_depth);
 
@@ -189,19 +191,13 @@ insert:
                 inserted->right[i] = n->right[i];
             }
             return inserted;
-
         }
-        /* straight swap */
-        if (c == 0)
-        {
-            void* old_v = r->ety.v;
-            r->ety.v = val_new;
-            return NULL;
-        }
-
     }
 
-
+insert:
+    *put_depth = __flip_coins();
+    n->right[lvl] = __allocnode(me, *put_depth);
+    return n;
 }
 
 void *skiplist_put(
