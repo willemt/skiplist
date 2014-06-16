@@ -6,22 +6,12 @@
 #include <string.h>
 #include "CuTest.h"
 
-#include "linked_list_skiplist.h"
+#include "skiplist.h"
 
-static unsigned long __uint_hash(
-    const void *e1
-)
-{
-    const long i1 = (unsigned long) e1;
-
-    assert(i1 >= 0);
-    return i1;
-}
-
-static long __uint_compare(
+static long __ulong_compare(
     const void *e1,
-    const void *e2
-)
+    const void *e2,
+    const void* udata __attribute__((unused)))
 {
     const long i1 = (unsigned long) e1, i2 = (unsigned long) e2;
 
@@ -29,55 +19,51 @@ static long __uint_compare(
     return i1 - i2;
 }
 
-void Testskiplistlinked_New(
-    CuTest * tc
-)
+void TestSkiplist_new(CuTest * tc)
 {
     skiplist_t *d;
 
-    d = skiplist_new(__uint_compare, NULL);
+    d = skiplist_new(__ulong_compare, NULL);
 
     CuAssertTrue(tc, 0 == skiplist_count(d));
-    CuAssertTrue(tc, 11 == skiplist_size(d));
     skiplist_freeall(d);
 }
 
-void Testskiplistlinked_Put(
+void Testskiplist_Put(
     CuTest * tc
 )
 {
     skiplist_t *d;
 
-    d = skiplist_new(__uint_compare, NULL);
+    d = skiplist_new(__ulong_compare, NULL);
     skiplist_put(d, (void *) 50, (void *) 92);
 
     CuAssertTrue(tc, 1 == skiplist_count(d));
     skiplist_freeall(d);
 }
 
-void Testskiplistlinked_PutEnsuresCapacity(
+void Testskiplist_PutEnsuresCapacity(
     CuTest * tc
 )
 {
     skiplist_t *d;
 
-    d = skiplist_new(__uint_hash, __uint_compare, 1);
+    d = skiplist_new(__ulong_compare, NULL);
     skiplist_put(d, (void *) 50, (void *) 92);
     skiplist_put(d, (void *) 51, (void *) 92);
 
     CuAssertTrue(tc, 2 == skiplist_count(d));
-    CuAssertTrue(tc, 2 == skiplist_size(d));
     skiplist_freeall(d);
 }
 
-void Testskiplistlinked_PutHandlesCollision(
+void Testskiplist_PutHandlesCollision(
     CuTest * tc
 )
 {
     skiplist_t *d;
     unsigned long val;
 
-    d = skiplist_new(__uint_hash, __uint_compare, 4);
+    d = skiplist_new(__ulong_compare, NULL);
     skiplist_put(d, (void *) 1, (void *) 92);
     skiplist_put(d, (void *) 5, (void *) 93);
 
@@ -93,14 +79,14 @@ void Testskiplistlinked_PutHandlesCollision(
     skiplist_freeall(d);
 }
 
-void Testskiplistlinked_GetHandlesCollisionByTraversingChain(
+void Testskiplist_GetHandlesCollisionByTraversingChain(
     CuTest * tc
 )
 {
     skiplist_t *d;
     unsigned long val;
 
-    d = skiplist_new(__uint_hash, __uint_compare, 4);
+    d = skiplist_new(__ulong_compare, NULL);
     skiplist_put(d, (void *) 1, (void *) 92);
     skiplist_put(d, (void *) 5, (void *) 93);
 
@@ -112,14 +98,14 @@ void Testskiplistlinked_GetHandlesCollisionByTraversingChain(
     skiplist_freeall(d);
 }
 
-void Testskiplistlinked_RemoveReturnsNullIfMissingAndTraversesChain(
+void Testskiplist_RemoveReturnsNullIfMissingAndTraversesChain(
     CuTest * tc
 )
 {
     skiplist_t *d;
     unsigned long val;
 
-    d = skiplist_new(__uint_hash, __uint_compare, 4);
+    d = skiplist_new(__ulong_compare, NULL);
     skiplist_put(d, (void *) 1, (void *) 92);
 
     val = (unsigned long) skiplist_remove(d, (void *) 5);
@@ -132,14 +118,14 @@ void Testskiplistlinked_RemoveReturnsNullIfMissingAndTraversesChain(
     skiplist_freeall(d);
 }
 
-void Testskiplistlinked_RemoveHandlesCollision(
+void Testskiplist_RemoveHandlesCollision(
     CuTest * tc
 )
 {
     skiplist_t *d;
     unsigned long val;
 
-    d = skiplist_new(__uint_hash, __uint_compare, 4);
+    d = skiplist_new(__ulong_compare, NULL);
     skiplist_put(d, (void *) 1, (void *) 92);
     skiplist_put(d, (void *) 5, (void *) 93);
     skiplist_put(d, (void *) 9, (void *) 94);
@@ -157,22 +143,24 @@ void Testskiplistlinked_RemoveHandlesCollision(
     skiplist_freeall(d);
 }
 
-void Testskiplistlinked_PutEntry(
+#if 0
+void T_estskiplist_PutEntry(
     CuTest * tc
 )
 {
     skiplist_t *d;
     skiplist_entry_t entry;
 
-    d = skiplist_new(__uint_compare, NULL);
-    entry.key = (void *) 50;
-    entry.val = (void *) 92;
+    d = skiplist_new(__ulong_compare, NULL);
+    entry.k = (void *) 50;
+    entry.v = (void *) 92;
     skiplist_put_entry(d, &entry);
     CuAssertTrue(tc, 1 == skiplist_count(d));
     skiplist_freeall(d);
 }
+#endif
 
-void Testskiplistlinked_Get(
+void Testskiplist_Get(
     CuTest * tc
 )
 {
@@ -180,7 +168,7 @@ void Testskiplistlinked_Get(
 
     unsigned long val;
 
-    d = skiplist_new(__uint_compare, NULL);
+    d = skiplist_new(__ulong_compare, NULL);
 
     skiplist_put(d, (void *) 50, (void *) 92);
 
@@ -191,13 +179,13 @@ void Testskiplistlinked_Get(
     skiplist_freeall(d);
 }
 
-void Testskiplistlinked_ContainsKey(
+void Testskiplist_ContainsKey(
     CuTest * tc
 )
 {
     skiplist_t *d;
 
-    d = skiplist_new(__uint_compare, NULL);
+    d = skiplist_new(__ulong_compare, NULL);
 
     skiplist_put(d, (void *) 50, (void *) 92);
 
@@ -206,7 +194,7 @@ void Testskiplistlinked_ContainsKey(
 }
 
 
-void Testskiplistlinked_DoublePut(
+void Testskiplist_DoublePut(
     CuTest * tc
 )
 {
@@ -214,7 +202,7 @@ void Testskiplistlinked_DoublePut(
 
     unsigned long val;
 
-    d = skiplist_new(__uint_compare, NULL);
+    d = skiplist_new(__ulong_compare, NULL);
     skiplist_put(d, (void *) 50, (void *) 92);
     skiplist_put(d, (void *) 50, (void *) 23);
     val = (unsigned long) skiplist_get(d, (void *) 50);
@@ -223,7 +211,7 @@ void Testskiplistlinked_DoublePut(
     skiplist_freeall(d);
 }
 
-void Testskiplistlinked_Get2(
+void Testskiplist_Get2(
     CuTest * tc
 )
 {
@@ -231,7 +219,7 @@ void Testskiplistlinked_Get2(
 
     unsigned long val;
 
-    d = skiplist_new(__uint_compare, NULL);
+    d = skiplist_new(__ulong_compare, NULL);
     skiplist_put(d, (void *) 50, (void *) 92);
     skiplist_put(d, (void *) 49, (void *) 91);
     skiplist_put(d, (void *) 48, (void *) 90);
@@ -243,7 +231,7 @@ void Testskiplistlinked_Get2(
     skiplist_freeall(d);
 }
 
-void Testskiplistlinked_IncreaseCapacityDoesNotBreakskiplist(
+void Testskiplist_Remove(
     CuTest * tc
 )
 {
@@ -251,30 +239,7 @@ void Testskiplistlinked_IncreaseCapacityDoesNotBreakskiplist(
 
     unsigned long val;
 
-    d = skiplist_new(__uint_hash, __uint_compare, 4);
-    skiplist_put(d, (void *) 1, (void *) 90);
-    skiplist_put(d, (void *) 5, (void *) 91);
-    skiplist_put(d, (void *) 2, (void *) 92);
-    skiplist_increase_capacity(d,2);
-    CuAssertTrue(tc, 3 == skiplist_count(d));
-    val = (unsigned long) skiplist_get(d, (void *) 1);
-    CuAssertTrue(tc, val == 90);
-    val = (unsigned long) skiplist_get(d, (void *) 5);
-    CuAssertTrue(tc, val == 91);
-    val = (unsigned long) skiplist_get(d, (void *) 2);
-    CuAssertTrue(tc, val == 92);
-    skiplist_freeall(d);
-}
-
-void Testskiplistlinked_Remove(
-    CuTest * tc
-)
-{
-    skiplist_t *d;
-
-    unsigned long val;
-
-    d = skiplist_new(__uint_compare, NULL);
+    d = skiplist_new(__ulong_compare, NULL);
 
     skiplist_put(d, (void *) 50, (void *) 92);
 
@@ -286,7 +251,7 @@ void Testskiplistlinked_Remove(
     skiplist_freeall(d);
 }
 
-void Testskiplistlinked_ClearRemovesAll(
+void Testskiplist_ClearRemovesAll(
     CuTest * tc
 )
 {
@@ -294,7 +259,7 @@ void Testskiplistlinked_ClearRemovesAll(
 
     unsigned long val;
 
-    d = skiplist_new(__uint_compare, NULL);
+    d = skiplist_new(__ulong_compare, NULL);
 
     skiplist_put(d, (void *) 1, (void *) 92);
     skiplist_put(d, (void *) 2, (void *) 102);
@@ -307,13 +272,13 @@ void Testskiplistlinked_ClearRemovesAll(
 }
 
 /* The clear function will need to clean the whole chain */
-void Testskiplistlinked_ClearHandlesCollision(
+void Testskiplist_ClearHandlesCollision(
     CuTest * tc
 )
 {
     skiplist_t *d;
 
-    d = skiplist_new(__uint_hash, __uint_compare, 4);
+    d = skiplist_new(__ulong_compare, NULL);
 
     skiplist_put(d, (void *) 1, (void *) 50);
     /* all of the rest cause collisions */
@@ -325,27 +290,27 @@ void Testskiplistlinked_ClearHandlesCollision(
 }
 
 #if 0
-void T_estskiplistlinked_DoesNotHaveNextForEmptyIterator(
+void T_estskiplist_DoesNotHaveNextForEmptyIterator(
     CuTest * tc
 )
 {
     skiplist_t *d;
     skiplist_iterator_t iter;
 
-    d = skiplist_new(__uint_compare, NULL);
+    d = skiplist_new(__ulong_compare, NULL);
     skiplist_iterator(d, &iter);
     CuAssertTrue(tc, 0 == skiplist_iterator_has_next(d, &iter));
     skiplist_freeall(d);
 }
 
-void T_estskiplistlinked_RemoveItemDoesNotHaveNextForEmptyIterator(
+void T_estskiplist_RemoveItemDoesNotHaveNextForEmptyIterator(
     CuTest * tc
 )
 {
     skiplist_t *d;
     skiplist_iterator_t iter;
 
-    d = skiplist_new(__uint_compare, NULL);
+    d = skiplist_new(__ulong_compare, NULL);
     skiplist_put(d, (void *) 9, (void *) 52);
     skiplist_remove(d, (void *) 9);
     skiplist_iterator(d, &iter);
@@ -353,7 +318,7 @@ void T_estskiplistlinked_RemoveItemDoesNotHaveNextForEmptyIterator(
     skiplist_freeall(d);
 }
 
-void T_estskiplistlinked_Iterate(
+void T_estskiplist_Iterate(
     CuTest * tc
 )
 {
@@ -365,8 +330,8 @@ void T_estskiplistlinked_Iterate(
 
     void *key;
 
-    d = skiplist_new(__uint_compare, NULL);
-    d2 = skiplist_new(__uint_compare, NULL);
+    d = skiplist_new(__ulong_compare, NULL);
+    d2 = skiplist_new(__ulong_compare, NULL);
 
     skiplist_put(d, (void *) 50, (void *) 92);
     skiplist_put(d, (void *) 49, (void *) 91);
@@ -395,7 +360,7 @@ void T_estskiplistlinked_Iterate(
     skiplist_freeall(d);
 }
 
-void T_estskiplistlinked_IterateHandlesCollisions(
+void T_estskiplist_IterateHandlesCollisions(
     CuTest * tc
 )
 {
@@ -405,8 +370,8 @@ void T_estskiplistlinked_IterateHandlesCollisions(
 
     void *key;
 
-    d = skiplist_new(__uint_hash, __uint_compare, 4);
-    d2 = skiplist_new(__uint_hash, __uint_compare, 4);
+    d = skiplist_new(__uint_hash, __ulong_compare, 4);
+    d2 = skiplist_new(__uint_hash, __ulong_compare, 4);
 
     skiplist_put(d, (void *) 1, (void *) 92);
     skiplist_put(d, (void *) 5, (void *) 91);
@@ -429,7 +394,7 @@ void T_estskiplistlinked_IterateHandlesCollisions(
     skiplist_freeall(d);
 }
 
-void T_estskiplistlinked_IterateAndRemoveDoesntBreakIteration(
+void T_estskiplist_IterateAndRemoveDoesntBreakIteration(
     CuTest * tc
 )
 {
@@ -438,8 +403,8 @@ void T_estskiplistlinked_IterateAndRemoveDoesntBreakIteration(
     skiplist_iterator_t iter;
     void *key;
 
-    d = skiplist_new(__uint_compare, NULL);
-    d2 = skiplist_new(__uint_compare, NULL);
+    d = skiplist_new(__ulong_compare, NULL);
+    d2 = skiplist_new(__ulong_compare, NULL);
 
     skiplist_put(d, (void *) 50, (void *) 92);
     skiplist_put(d, (void *) 49, (void *) 91);

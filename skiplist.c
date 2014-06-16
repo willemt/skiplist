@@ -16,7 +16,27 @@
 
 #include "skiplist.h"
 
-node_t* __allocnode(skiplist_t* me, unsigned int levels)
+
+static void __support_new_lines(skiplist_t* me, node_t* new, unsigned int levels)
+{
+    /* make sure nil is included in the new line(s) */
+    if (me->levels < levels)
+    {
+        me->nil->right = realloc(me->nil->right, sizeof(node_t*) * levels);
+
+        unsigned int i;
+        for (i=levels-1; me->levels < i; i--)
+        {
+            me->nil->right[i] = new;
+            if (me->head != new)
+                new->right[i] = me->head;
+        }
+
+        me->levels = levels;
+    }
+}
+
+static node_t* __allocnode(skiplist_t* me, unsigned int levels)
 {
     node_t* n;
 
@@ -25,21 +45,6 @@ node_t* __allocnode(skiplist_t* me, unsigned int levels)
 
     if (!(n->right = calloc(1, sizeof(node_t*) * levels)))
         return NULL;
-
-    /* make sure nil and head are included in the new line(s) */
-    if (me->levels < levels)
-    {
-        me->nil->right = realloc(me->nil->right, sizeof(node_t*) * levels);
-
-        unsigned int i;
-
-        for (i=levels-1; me->levels < i ; i--)
-        {
-            me->nil->right[i] = n;
-        }
-
-        me->levels = levels;
-    }
     return n;
 }
 
@@ -60,6 +65,7 @@ int skiplist_count(const skiplist_t * me)
     return me->count;
 }
 
+#if 0
 /**
  * free all the nodes in a chain, recursively. */
 static void __node_empty(
@@ -78,12 +84,15 @@ static void __node_empty(
         me->count--;
     }
 }
+#endif
 
 void skiplist_clear(
     skiplist_t * me
 )
 {
-    // TODO
+    unsigned int i;
+    for (i=0; i<me->levels; i++)
+        me->nil->right[i] = NULL;
 }
 
 void skiplist_free(
@@ -151,53 +160,57 @@ static void *__put(
 
     while (1)
     {
-        /* special case for head */
-        if (n == me->head)
-        {
-            r = n;
-            goto insert;
-        }
-
         r = n->right[lvl];
         long c = me->cmp(key, r->ety.k, NULL);
 
-        /* we are bigger, move onwards */
-        if (0 < c)
+        /* we are smaller, move down a lane */
+        if (c < 0)
         {
+            /* if we're on the bottom lane, we've found our spot */
+            if (lvl == 0)
+                goto place;
+
+            node_t* placed =  __put(me, key, val_new, lvl-1, r, put_depth);
+
+            /* while the stack is rolling back up, we can use the stack to
+             * make sure the previous nodes point to the new node correctly. */
+            //unsigned int i;
+            //for (i=lvl; placed && (i <= *put_depth || placed == me->head); i++)
+            if (placed && (lvl <= *put_depth || placed == me->head))
+            {
+                node_t* swp = n->right[lvl];
+                n->right[lvl] = placed;
+                placed->right[lvl] = swp;
+            }
+            return placed;
+        }
+        /* we are larger, move onwards */
+        else if (0 < c)
+        {
+            if (r == me->head)
+            {
+                lvl = 0;
+                n = r;
+                goto place;
+            }
             n = r;
         }
         /* straight swap */
         else if (c == 0)
         {
-            void* old_v = r->ety.v;
+            //void* old_v = r->ety.v;
             r->ety.v = val_new;
             return NULL;
         }
-        /* move down a lane */
-        else
-        {
-            /* if we're on the bottom lane, we've found our spot */
-            if (lvl == 0)
-                goto insert;
-
-            node_t* inserted =  __put(me, key, val_new, lvl-1, r, put_depth);
-
-            /* while the stack is rolling back up, we can make sure the
-             * previous nodes point to the new node correctly */
-            int i;
-            for (i=lvl; inserted && i <= *put_depth; i++)
-            {
-                n->right[i] = inserted;
-                inserted->right[i] = n->right[i];
-            }
-            return inserted;
-        }
     }
 
-insert:
+place:
     *put_depth = __flip_coins();
-    n->right[lvl] = __allocnode(me, *put_depth);
-    return n;
+    node_t* swp = n->right[lvl];
+    node_t* new = n->right[lvl] = __allocnode(me, *put_depth);
+    n->right[lvl] = swp;
+    __support_new_lines(me, new, *put_depth);
+    return new;
 }
 
 void *skiplist_put(
@@ -213,6 +226,14 @@ void *skiplist_put(
     unsigned int put_depth;
 
     node_t *n = me->nil;
+
+    if (!me->nil->right[lvl])
+    {
+        n = me->head = me->nil->right[lvl] = __allocnode(me, me->levels);
+        n->ety.k = key;
+        n->ety.v = val_new;
+        return NULL;
+    }
 
     return __put(me, key, val_new, lvl, n, &put_depth);
 }
@@ -231,6 +252,9 @@ void *skiplist_remove(
 )
 {
     skiplist_entry_t e;
+
+    printf("%d\n", me->levels);
+    printf("%p\n", key);
 
     return (void *) e.v;
 }
