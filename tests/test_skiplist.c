@@ -211,6 +211,26 @@ void Testskiplist_DoublePut(
     skiplist_freeall(d);
 }
 
+void Testskiplist_PutAtHead(
+    CuTest * tc
+)
+{
+    skiplist_t *d;
+
+    unsigned long val;
+
+    d = skiplist_new(__ulong_compare, NULL);
+    skiplist_put(d, (void *) 45, (void *) 87);
+    skiplist_put(d, (void *) 46, (void *) 88);
+    skiplist_put(d, (void *) 47, (void *) 89);
+    skiplist_put(d, (void *) 48, (void *) 90);
+    skiplist_put(d, (void *) 49, (void *) 91);
+    skiplist_put(d, (void *) 50, (void *) 92);
+    val = (unsigned long) skiplist_get(d, (void *) 48);
+    CuAssertTrue(tc, val == 90);
+    skiplist_freeall(d);
+}
+
 void Testskiplist_Get2(
     CuTest * tc
 )
