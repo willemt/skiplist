@@ -1,5 +1,5 @@
 
-.. image:: http://github.com/willemt/skiplist/raw/master/doc/chuo_line.png
+.. figure:: doc/chuo_line.png
 
 How does it work?
 -----------------
