@@ -1,0 +1,9 @@
+{
+  "name": "skiplist",
+  "version": "0.0.1",
+  "repo": "willemt/skiplist",
+  "description": "Dictionary implemented using a skiplist",
+  "keywords": ["skiplist", "hashmap", "map", "dictionary"],
+  "license": "BSD",
+  "src": ["skiplist.c", "skiplist.h"]
+}
