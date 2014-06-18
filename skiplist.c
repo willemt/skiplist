@@ -179,8 +179,13 @@ static void *__put(
 {
     node_t *n = prev;
 
+    assert(n);
+
+    int i = 0;
+
     while (1)
     {
+        printf("i %d lvl %d\n", i++, lvl); 
         node_t *r = n->right[lvl];
         long c = me->cmp(key, r->ety.k, me->udata);
 
@@ -191,11 +196,11 @@ static void *__put(
             if (lvl == 0)
                 return __place(me, key, val_new, n, put_depth);
 
-            node_t* placed =  __put(me, key, val_new, lvl-1, r, put_depth);
+            node_t* placed =  __put(me, key, val_new, lvl-1, n, put_depth);
 
             /* while the stack is rolling back up, we can use the stack to
              * make sure the previous nodes point to the new node correctly. */
-            if (placed && (lvl <= *put_depth))// || placed == me->head))
+            if (placed && (lvl < *put_depth))// || placed == me->head))
             {
                 node_t* swp = n->right[lvl];
                 n->right[lvl] = placed;
