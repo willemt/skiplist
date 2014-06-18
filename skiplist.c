@@ -18,7 +18,7 @@
 
 static void __free_node(node_t* n)
 {
-    free(n->right);
+    free(n->next);
     free(n);
 }
 
@@ -28,7 +28,7 @@ static node_t* __allocnode(unsigned int levels)
 
     if (!(n = calloc(1, sizeof(node_t))))
         return NULL;
-    if (!(n->right = calloc(1, sizeof(node_t*) * levels)))
+    if (!(n->next = calloc(1, sizeof(node_t*) * levels)))
         return NULL;
     return n;
 }
@@ -56,7 +56,7 @@ void skiplist_clear(
 {
     unsigned int i;
     for (i=0; i<me->levels; i++)
-        me->nil->right[i] = NULL;
+        me->nil->next[i] = NULL;
     me->count = 0;
 }
 
@@ -84,9 +84,9 @@ static unsigned int __flip_coins()
 
 static void __swap(node_t* a, node_t* b, unsigned int lvl)
 {
-    node_t* swp = a->right[lvl];
-    a->right[lvl] = b;
-    b->right[lvl] = swp;
+    node_t* swp = a->next[lvl];
+    a->next[lvl] = b;
+    b->next[lvl] = swp;
 }
 
 int skiplist_contains_key(
@@ -107,7 +107,7 @@ void *skiplist_get(skiplist_t * me, const void *key)
 
     while (0 <= lvl && n != me->head)
     {
-        node_t *r = n->right[lvl] ? n->right[lvl] : me->head;
+        node_t *r = n->next[lvl] ? n->next[lvl] : me->head;
         long c = me->cmp(key, r->ety.k, me->udata);
 
         if (c < 0)
@@ -142,16 +142,16 @@ static node_t* __place(
     /* make sure nil is included in the new line(s) */
     if (me->levels < *put_depth)
     {
-        me->nil->right = realloc(me->nil->right, sizeof(node_t*) * *put_depth);
-        me->head->right = realloc(me->head->right, sizeof(node_t*) * *put_depth);
+        me->nil->next = realloc(me->nil->next, sizeof(node_t*) * *put_depth);
+        me->head->next = realloc(me->head->next, sizeof(node_t*) * *put_depth);
 
         unsigned int i;
         for (i=*put_depth - 1; me->levels - 1 < i; i--)
         {
-            me->nil->right[i] = new;
+            me->nil->next[i] = new;
             if (me->head != new)
-                new->right[i] = me->head;
-            me->head->right[i] = NULL;
+                new->next[i] = me->head;
+            me->head->next[i] = NULL;
         }
 
         me->levels = *put_depth;
@@ -161,6 +161,9 @@ static node_t* __place(
     return new;
 }
 
+/**
+ * We're doing this call recursively since it allows us to use the stack as a 
+ * workspace. This means we don't need a doubly linked list */
 static void *__put(
     skiplist_t * me,
     void *key,
@@ -175,7 +178,7 @@ static void *__put(
 
     while (1)
     {
-        node_t *r = n->right[lvl];
+        node_t *r = n->next[lvl];
         long c = me->cmp(key, r->ety.k, me->udata);
 
         /* we are smaller, move down a lane */
@@ -229,9 +232,9 @@ void *skiplist_put(
     node_t *n = me->nil;
     unsigned int lvl = me->levels - 1;
 
-    if (!me->nil->right[lvl])
+    if (!me->nil->next[lvl])
     {
-        n = me->head = me->nil->right[lvl] = __allocnode(me->levels);
+        n = me->head = me->nil->next[lvl] = __allocnode(me->levels);
         n->ety.k = key;
         n->ety.v = val;
         me->count++;
@@ -254,7 +257,7 @@ static node_t *__remove(
 
     while (1)
     {
-        node_t *r = n->right[lvl];
+        node_t *r = n->next[lvl];
         long c = me->cmp(key, r->ety.k, me->udata);
 
         if (0 < c)
@@ -267,7 +270,7 @@ static node_t *__remove(
             {
                 if (c == 0)
                 {
-                    n->right[lvl] = r->right[lvl];
+                    n->next[lvl] = r->next[lvl];
                     return r;
                 }
                 break;
@@ -275,11 +278,11 @@ static node_t *__remove(
 
             node_t* removed = __remove(me, key, lvl-1, prev);
             if (removed && r == removed)
-                n->right[lvl] = removed->right[lvl];
+                n->next[lvl] = removed->next[lvl];
             return removed;
         }
 
-        if (!n->right[lvl])
+        if (!n->next[lvl])
             break;
     }
     return NULL;
@@ -312,12 +315,12 @@ void skiplist_print(skiplist_t *me)
     for (i=me->levels-1; 1; i--)
     {
         printf("%d|", i);
-        node_t* n = me->nil->right[i];
+        node_t* n = me->nil->next[i];
         while (n)
         {
             printf("k:%d", (unsigned int)n->ety.k);
             printf("v:%d ", (unsigned int)n->ety.v);
-            n = n->right[i];
+            n = n->next[i];
         }
         printf("\n");
         if (i==0) break;

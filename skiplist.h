@@ -23,7 +23,7 @@ struct node_s
      *
      * We don't record a "left" node because the put() operation backtracks
      * using the * stack via a recursive call */
-    node_t **right;
+    node_t **next;
 };
 
 
