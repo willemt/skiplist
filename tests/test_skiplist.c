@@ -37,7 +37,7 @@ void Testskiplist_Put(
 
     d = skiplist_new(__ulong_compare, NULL);
     skiplist_put(d, (void *) 50, (void *) 92);
-
+    CuAssertTrue(tc, (void *)92 == skiplist_get(d, (void*) 50));
     CuAssertTrue(tc, 1 == skiplist_count(d));
     skiplist_freeall(d);
 }
@@ -129,6 +129,9 @@ void Testskiplist_RemoveHandlesCollision(
     skiplist_put(d, (void *) 1, (void *) 92);
     skiplist_put(d, (void *) 5, (void *) 93);
     skiplist_put(d, (void *) 9, (void *) 94);
+
+    val = (unsigned long) skiplist_get(d, (void *) 5);
+    CuAssertTrue(tc, 0 != val);
 
     val = (unsigned long) skiplist_remove(d, (void *) 5);
     CuAssertTrue(tc, 0 != val);
@@ -308,6 +311,11 @@ void Testskiplist_ClearHandlesCollision(
     CuAssertTrue(tc, 0 == skiplist_count(d));
     skiplist_freeall(d);
 }
+
+#if 0
+// TODO special case for removing highest value
+
+#endif
 
 #if 0
 void T_estskiplist_DoesNotHaveNextForEmptyIterator(
