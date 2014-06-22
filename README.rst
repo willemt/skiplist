@@ -19,4 +19,3 @@ Todo
 ----
 
 - Make lockfree variant using CAS
--
